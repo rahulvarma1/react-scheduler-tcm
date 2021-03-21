@@ -202,14 +202,12 @@ export default class Member extends React.Component {
                                     <input type="text" className="form-control" placeholder="Enter Mobile Number" name="mobile" value={this.state.mobile} onChange={(event) => this.setState({mobile : event.target.value})} required="required"  />
                                     {Object.keys(this.state.errors).length > 0 ? <span className="text-danger font-weight-bold">{this.state.errors.mobile}</span> : ''}
                                 </div>
-                                {
-                                    this.state.id === '' ?
-                                        <div className="form-group">
-                                            <label>Password</label>
-                                            <input type="password" className="form-control" name="password" placeholder="Enter password"  onChange={(event) => this.setState({password : event.target.value})}  value={this.state.password} required="required"  />
-                                        </div>
-                                    : ''
-                                }
+                               
+                                <div className="form-group">
+                                    <label>Password</label>
+                                    <input type="password" className="form-control" name="password" placeholder="Enter password"  onChange={(event) => this.setState({password : event.target.value})}  value={this.state.password} required="required"  />
+                                </div>
+                                  
 
                                 <input type="hidden" name='id' value={this.state.id} />
                                 <button type="submit" className="btn btn-primary btn-block">Submit</button>
