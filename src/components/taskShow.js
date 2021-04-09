@@ -16,15 +16,20 @@ export default class TaskShow extends React.Component {
         }
 
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.getTasks = this.getTasks.bind(this);
     }
 
     componentDidMount = async () => {
+
+        this.getTasks();
+        this.getComments();
+    }
+    getTasks = async () => {
         var taskId = this.props.match.params.taskId;
         var task =  await axios.get('http://localhost:3001/tasks/'+taskId).then(result => {
             return result.data;
         }).catch(err => console.log(err));
-        this.setState({task : task});
-        this.getComments();
+      await this.setState({task : task});
     }
     getComments = async () => {
         var taskId = this.props.match.params.taskId;
@@ -48,7 +53,28 @@ export default class TaskShow extends React.Component {
         }).catch(err => console.log(err))
         this.setState({message:''});
         this.getComments();
+        console.log(test)
     }
+
+    handleComplete = async (value) => {
+        var json  = await axios.put('http://localhost:3001/tasks/'+value.id,{
+                title: value.title,
+                description:value.description,
+                start_date:value.start_date,
+                due_date:value.due_date,
+                assignee_id:value.assignee_id,
+                assignee_name:value.assignee_name,
+                status:'A'
+          }).then(result => {
+              console.log(result)
+
+              alert('Task completed successfully.');
+          }).catch(err => {
+              console.log(err);
+          });
+          console.log(json)
+          await this.getTasks();
+      }
 
  render() {
     return (
@@ -58,14 +84,23 @@ export default class TaskShow extends React.Component {
             <div className="row mt-5">
                 <div className="col-md-12 m-auto">
                     <div className="card">
-                        <div className="card-header">Task Details</div>
+                        <div className="card-header">
+                            <div className="card-title">Task Details
+                            {
+                            this.state.task.status === 'P' ?
+                                <button className="btn btn-sm btn-success pull-right" onClick={() => this.handleComplete(this.state.task)}>Complete</button>
+                            : '' }
+
+                            </div>
+
+                        </div>
                         <div className="card-body">
                             <div className="row">
                                 <div className="col-md-12">
                                     <h6 className="mb-3"> <span className="font-weight-bold">Title</span> : {this.state.task.title}</h6>
                                     <h6 className="mb-3"> <span className="font-weight-bold">Creator</span> : Admin</h6>
                                     <h6 className="mb-3"><span className="font-weight-bold">Start Date</span> : {this.state.task.start_date} <span className="font-weight-bold"><i className="fa fa-arrow-right"></i></span> <span className="font-weight-bold">Due Date</span> : {this.state.task.due_date} </h6>
-                                    <h6 className="mb-3"><span className="font-weight-bold">Status</span> : {this.state.task.status === 'P' ? 'In Progress' : 'Completed'}</h6>
+                                    <h6 className="mb-3"><span className="font-weight-bold">Status</span> :{this.state.task.status === 'P' ? 'In Progress' : (this.state.task.status === 'O' ? 'Open' : 'Completed')}</h6>
                                     <h6 className="font-weight-bold">DESCRIPTION: </h6>
                                     <span>{this.state.task.description}</span>
                                     <hr />
@@ -108,7 +143,6 @@ export default class TaskShow extends React.Component {
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

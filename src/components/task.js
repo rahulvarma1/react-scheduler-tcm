@@ -1,10 +1,10 @@
 import React from 'react';
 import NavBar from './navbar';
 import {Modal,Button} from 'react-bootstrap';
-import DatePicker from "react-datepicker";
+import DateTimePicker from 'react-datetime-picker';
 import { Link } from 'react-router-dom';
-
-
+import checkIcon from '../check.svg';
+import Toast from './Toast';
 const axios = require('axios');
 
 const user = JSON.parse(localStorage.getItem('user'));
@@ -15,6 +15,7 @@ export default class Task extends React.Component {
             show: false,
             tasks :[],
             members:[],
+            toastList:[],
             id:'',
             title:'',
             description:'',
@@ -28,6 +29,7 @@ export default class Task extends React.Component {
         this.getFullDate = this.getFullDate.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleStartDate = this.handleStartDate.bind(this);
+        this.getTasks = this.getTasks.bind(this);
 
     }
     componentDidMount = async () => {
@@ -89,8 +91,9 @@ export default class Task extends React.Component {
     handleSubmit = async (event) => {
         event.preventDefault();
         var errors= {};
+
         if(this.state.start_date >= this.state.due_date){
-            errors["due_date"] = 'Due date is greater than to start date.';
+            errors["due_date"] = 'Due date is greater than or equal to start date.';
           await  this.setState({errors:errors})
 
         }else{
@@ -98,8 +101,8 @@ export default class Task extends React.Component {
         }
         if(Object.keys(this.state.errors).length === 0){
             //  console.log('asdasdasd');
-            var start_date =  this.getFullDate(this.state.start_date);
-            var due_date =  this.getFullDate(this.state.due_date);
+            var start_date =  this.getFullDate(this.state.start_date).datetime;
+            var due_date =  this.getFullDate(this.state.due_date).datetime;
 
             var assignee_name  = await axios.get('http://localhost:3001/users/'+this.state.assignee_id).then(result => {
                 return result.data.name;
@@ -114,10 +117,18 @@ export default class Task extends React.Component {
                     due_date:due_date,
                     assignee_id:this.state.assignee_id,
                     assignee_name:assignee_name,
-                    status:'P'
+                    status:'O'
                 }).then(result => {
                     console.log(result)
-                    alert('Task created successfully.');
+                    this.setState({
+                        toastList:[{
+                            id:'1',
+                            title: 'Success',
+                            description: "Task Created successfully",
+                            backgroundColor: 'success',
+                            icon: checkIcon
+                        }]
+                    });
 
                 }).catch(err => {
                     console.log(err);
@@ -130,14 +141,23 @@ export default class Task extends React.Component {
                     due_date:due_date,
                     assignee_id:this.state.assignee_id,
                     assignee_name:assignee_name,
-                    status:'P'
+                    status:'O'
                 }).then(result => {
                     console.log(result)
-                    alert('Task updated successfully.');
+                    this.setState({
+                        toastList:[{
+                            id:'1',
+                            title: 'Success',
+                            description: "Task updated successfully",
+                            backgroundColor: 'success',
+                            icon: checkIcon
+                        }]
+                    });
                 }).catch(err => {
                     console.log(err);
                 });
             }
+            console.log(json)
             this.setState({show:false});
             await this.getTasks();
         }
@@ -165,8 +185,15 @@ export default class Task extends React.Component {
         var s_date = new Date(date);
         var s_month = (parseInt(s_date.getMonth()) + parseInt(1)) <= 9 ? ('0' + (parseInt(s_date.getMonth()) + parseInt(1)) ) : (parseInt(s_date.getMonth()) + parseInt(1)) ;
         var s_day =  s_date.getDate() <=9 ? '0'+ s_date.getDate() :  s_date.getDate();
-        var final_date = s_date.getFullYear() +'-' + s_month +'-'+ s_day ;
-        return final_date;
+        var s_hour = s_date.getHours() <=9 ? '0'+ s_date.getHours() :  s_date.getHours();
+        var s_min = s_date.getMinutes() <=9 ? '0'+ s_date.getMinutes() :  s_date.getMinutes();
+        var s_sec = s_date.getSeconds() <=9 ? '0'+ s_date.getSeconds() :  s_date.getSeconds();
+
+        var final_date = s_date.getFullYear() +'-' + s_month +'-'+ s_day;
+        return {
+            datetime: s_date.getFullYear() +'-' + s_month +'-'+ s_day +'T'+s_hour+':'+s_min+':'+s_sec,
+            date:final_date
+        };
 
     }
 
@@ -175,21 +202,33 @@ export default class Task extends React.Component {
             if(result.data.length > 0){
                 result.data.map(value => {
                     axios.delete('http://localhost:3001/comments/'+value.id).then(rs=>console.log(rs)).catch(er => console.log(er))
-                })
+
+                });
             }
         }).catch(err => {
             console.log(err);
         });
         var json =  await axios.delete('http://localhost:3001/tasks/'+id).then(result => {
             console.log(result);
-            alert('Task Deleted Successgully');
+            this.setState({
+                toastList:[{
+                    id:'1',
+                    title: 'Success',
+                    description: "Task deleted successfully",
+                    backgroundColor: 'success',
+                    icon: checkIcon
+                }]
+            });
+
         }).catch(err => {
             console.log(err);
         });
+        console.log(json)
+        console.log(json1)
         await this.getTasks();
     }
 
-    handleComplete = async (value) => {
+    handleComplete = async (value,status) => {
       var   json  = await axios.put('http://localhost:3001/tasks/'+value.id,{
             title: value.title,
             description:value.description,
@@ -197,13 +236,22 @@ export default class Task extends React.Component {
             due_date:value.due_date,
             assignee_id:value.assignee_id,
             assignee_name:value.assignee_name,
-            status:'A'
+            status:status
         }).then(result => {
             console.log(result)
-            alert('Task completed successfully.');
+            this.setState({
+                toastList:[{
+                    id:'1',
+                    title: 'Success',
+                    description: "Task "+( status === 'A' ? 'completed' : 'In progress') +" successfully",
+                    backgroundColor: 'success',
+                    icon: checkIcon
+                }]
+            });
         }).catch(err => {
             console.log(err);
         });
+        console.log(json)
         await this.getTasks();
     }
 
@@ -211,6 +259,11 @@ export default class Task extends React.Component {
         return (
             <>
             <NavBar />
+            {this.state.toastList.length > 0 ?
+                <Toast
+                toastList={this.state.toastList}
+                position="bottom-right"
+            /> : "" }
             <div className="container" >
                 <div className="row mt-5">
                     <div className="col-md-12">
@@ -254,7 +307,7 @@ export default class Task extends React.Component {
                                                     <td>{value.assignee_name}</td>
                                                     <td>{value.start_date}</td>
                                                     <td>{value.due_date}</td>
-                                                    <td>{value.status === 'P' ? 'In Progress' : 'Completed'}</td>
+                                                    <td>{value.status === 'P' ? 'In Progress' : (value.status === 'O' ? 'Open' : 'Completed')}</td>
                                                     {user.role === 'admin' ?
                                                         <td>
                                                             <Link to={`/task_show/${value.id}`} className="btn btn-sm btn-info"><i className="fa fa-eye"></i></Link>
@@ -267,9 +320,12 @@ export default class Task extends React.Component {
                                                             <Link to={`/task_show/${value.id}`} className="btn btn-sm btn-info">Show</Link>
                                                             { value.status === 'P' ?
 
-                                                                <button className="btn btn-sm btn-success ml-2" onClick={() => this.handleComplete(value)} >Completed</button>
+                                                                <button className="btn btn-sm btn-success ml-2" onClick={() => this.handleComplete(value,'A')} >Completed</button>
 
-                                                            : ''}
+                                                            :  ((value.status === 'O') ?
+                                                                <button className="btn btn-sm btn-info pull-right" onClick={() => this.handleComplete(this.state.task,'P')}>Mark In Progress</button>
+                                                        :'' )
+                                                        }
                                                         </td>
                                                     }
 
@@ -288,7 +344,9 @@ export default class Task extends React.Component {
                     </div>
                     <Modal show={this.state.show} onHide={this.hideModal}>
                         <Modal.Header >
-                        <Modal.Title>{this.state.id === '' ? 'Add' : 'Edit'} Task</Modal.Title>
+                        <Modal.Title>{this.state.id === '' ? 'Add' : 'Edit'} Task
+
+                        </Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
                         <form name="memberForm" autoComplete="off" className="memberForm" onSubmit={this.handleSubmit}>
@@ -298,16 +356,30 @@ export default class Task extends React.Component {
                             </div>
                             <div className="form-group">
                                 <label >Task Description</label>
-                                <textarea className="form-control" name="description" cols="10" rows="7" onChange={(event) => {this.setState({description:event.target.value})}}>{this.state.description}</textarea>
+                                <textarea className="form-control" name="description" cols="10" rows="7" onChange={(event) => {this.setState({description:event.target.value})}} defaultValue={this.state.description}></textarea>
                             </div>
-                            <div className="form-group">
-                                <label >Set a start date </label>
-                                <DatePicker selected={this.state.start_date} onChange={date => this.setState({start_date:date})}className="form-control" dateFormat="Y-MM-dd" minDate={new Date()} required="required" />
-                            </div>
-                            <div className="form-group">
-                                <label >Set a due date </label>
-                                <DatePicker selected={this.state.due_date} onChange={date => this.setState({due_date:date})} className="form-control" dateFormat="Y-MM-dd" minDate={new Date()} required="required" />
-                                {Object.keys(this.state.errors).length > 0 ? <span className="text-danger font-weight-bold">{this.state.errors.due_date}</span> : ''}
+                            <div className="row">
+                                <div className="form-group col-md-12">
+                                    <label >Set a start date </label>
+                                    <DateTimePicker
+                                        minDate={new Date()}
+                                        onChange={date => this.setState({start_date:date})} value={this.state.start_date} className="form-control p-0 h-0"
+                                        format="y-MM-dd HH:mm:ss"
+                                        isClockOpen={false}
+                                    />
+
+                                </div>
+                                <div className="form-group col-md-12">
+                                    <label >Set a due date </label>
+                                    <DateTimePicker
+                                        minDate={new Date()}
+                                        onChange={date => this.setState({due_date:date})} value={this.state.due_date} className="form-control p-0"
+                                        isClockOpen={false}
+                                        format="y-MM-dd HH:mm:ss"
+                                    />
+
+                                    {Object.keys(this.state.errors).length > 0 ? <span className="text-danger font-weight-bold">{this.state.errors.due_date}</span> : ''}
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>Task Assignee </label>

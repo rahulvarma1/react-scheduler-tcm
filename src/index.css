@@ -21,3 +21,14 @@ code {
 .mintcream{
     /* background-color: mintcream; */
 }
+.fc-event-title{
+    font-family:  'Times New Roman', Times, serif !important;
+    font-weight: bold;
+}
+.fc-event-main{
+    padding: 6px !important;
+}
+
+.fc-timeline-event {
+    border-radius:7px !important;
+}

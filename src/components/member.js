@@ -1,7 +1,8 @@
 import React from 'react';
 import NavBar from './navbar';
 import { Modal, Button } from "react-bootstrap";
-
+import checkIcon from '../check.svg';
+import Toast from './Toast';
 const axios = require('axios');
 export default class Member extends React.Component {
     constructor(props) {
@@ -13,6 +14,7 @@ export default class Member extends React.Component {
             email : '',
             mobile: '',
             password: '',
+            toastList:[],
             id:'',
             errors:{}
         };
@@ -24,6 +26,7 @@ export default class Member extends React.Component {
         //  this.setState({members : })
          await this.getMembers();
     }
+
 
     getMembers = async () => {
         var users = await axios.get('http://localhost:3001/users?role=engineer').then(result => {
@@ -53,9 +56,6 @@ export default class Member extends React.Component {
 
     handleSubmit = async (event) => {
         event.preventDefault();
-        var errors ={};
-
-
 
         // if(Number.isInteger(this.state.mobile) === true){
                 var json = '';
@@ -68,8 +68,18 @@ export default class Member extends React.Component {
                         password:this.state.password,
                         role:'engineer'
                     }).then(result => {
-                    console.log(result)
-                    alert('Engineer created successfully.');
+                        console.log(result)
+                        this.setState({
+                            toastList:[{
+                                id:'1',
+                                title: 'Success',
+                                description: "Engineer created successfully",
+                                backgroundColor: 'success',
+                                icon: checkIcon
+                            }]
+                        });
+
+
 
                     }).catch(err => {
                         console.log(err);
@@ -83,12 +93,20 @@ export default class Member extends React.Component {
                         role:'engineer'
                     }).then(result => {
                         console.log(result)
-                        alert('Engineer updated successfully.');
+                        this.setState({
+                            toastList:[{
+                                id:'1',
+                                title: 'Success',
+                                description: "Engineer updated successfully",
+                                backgroundColor: 'success',
+                                icon: checkIcon
+                            }]
+                        });
                     }).catch(err => {
                         console.log(err);
                     });
                 }
-
+                console.log(json)
                 this.setState({show:false});
                 await this.getMembers();
 
@@ -114,10 +132,20 @@ export default class Member extends React.Component {
 
        var json =  await axios.delete('http://localhost:3001/users/'+id).then(result => {
             console.log(result);
-            alert('Engineer Deleted Successgully');
+            this.setState({
+                toastList:[{
+                    id:'1',
+                    title: 'Success',
+                    description: "Engineer Deleted successfully",
+                    backgroundColor: 'success',
+                    icon: checkIcon
+                }]
+            });
+
         }).catch(err => {
             console.log(err);
         });
+        console.log(json)
         await this.getMembers();
     }
 
@@ -127,6 +155,11 @@ export default class Member extends React.Component {
             <>
             <NavBar />
             <div className="container">
+                {this.state.toastList.length > 0 ?
+                    <Toast
+                    toastList={this.state.toastList}
+                    position="bottom-right"
+                /> : "" }
                 <div className="row mt-5">
                     <div className="col-md-12">
                         <div className="card">
@@ -202,12 +235,12 @@ export default class Member extends React.Component {
                                     <input type="text" className="form-control" placeholder="Enter Mobile Number" name="mobile" value={this.state.mobile} onChange={(event) => this.setState({mobile : event.target.value})} required="required"  />
                                     {Object.keys(this.state.errors).length > 0 ? <span className="text-danger font-weight-bold">{this.state.errors.mobile}</span> : ''}
                                 </div>
-                               
+
                                 <div className="form-group">
                                     <label>Password</label>
                                     <input type="password" className="form-control" name="password" placeholder="Enter password"  onChange={(event) => this.setState({password : event.target.value})}  value={this.state.password} required="required"  />
                                 </div>
-                                  
+
 
                                 <input type="hidden" name='id' value={this.state.id} />
                                 <button type="submit" className="btn btn-primary btn-block">Submit</button>
